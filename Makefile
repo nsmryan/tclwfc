@@ -6,7 +6,7 @@ tclwfc.so: src/tclwfc.c
 
 .PHONY: test clean
 test:
-	tclsh test.tcl
+	tkcon.tcl test.tcl
 
 clean:
 	rm tclwfc.so

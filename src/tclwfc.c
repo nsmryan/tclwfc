@@ -127,8 +127,9 @@ static int Tclwfc_Gen(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *c
 	{
 		for (int width = 0; width < tmpImg->width; width++)
 		{
-			uint8_t byte = tmpImg->data[(tmpImg->width * height + width) * tmpImg->component_cnt];
-			Tcl_ListObjAppendElement(interp, pixels, Tcl_NewIntObj(byte));
+			//uint8_t color = tmpImg->data[(tmpImg->width * height + width) * tmpImg->component_cnt];
+			uint32_t color = *(uint32_t*)&tmpImg->data[(tmpImg->width * height + width) * tmpImg->component_cnt];
+			Tcl_ListObjAppendElement(interp, pixels, Tcl_NewIntObj(color));
 		}
 	}
 

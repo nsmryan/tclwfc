@@ -1,13 +1,47 @@
+package require Tk
+
 load "./tclwfc.so"
 
 set fileName wfc/samples/cave.png
 
-puts open
-tclwfc::wfc 32 32 $fileName 3 3 1 1 1 1
+set width 32
+set height 32
+tclwfc::wfc $width $height $fileName 3 3 1 1 1 1
 
-puts gen
-set pixels [tclwfc::generate]
+canvas .canvas 
+pack .canvas -expand yes -fill both
+update
 
-puts pixels
-puts $pixels
+bind . <Destroy> exit
 
+set canvasWidth [winfo width .canvas]
+set canvasHeight [winfo height .canvas]
+
+set cellWidth [expr $canvasWidth / $width]
+set cellHeight [expr $canvasHeight / $height]
+
+set cellWidth [expr min($cellWidth, $cellHeight)]
+set cellHeight [expr min($cellWidth, $cellHeight)]
+
+proc draw { pixels } {
+	global width height cellWidth cellHeight 
+
+	.canvas delete all
+	for { set y 0 } { $y < $width } { incr y } {
+		for { set x 0 } { $x < $width } { incr x } {
+			set xPixel [expr $x * $cellWidth]
+			set yPixel [expr $y * $cellHeight]
+			set xPixelExtent [expr $xPixel + $cellWidth]
+			set yPixelExtent [expr $yPixel + $cellHeight]
+
+			set index [expr $y * $width + $x]
+			set value [expr 0xFFFFFF & [lindex $pixels $index]]
+			set color #[format %06X $value]
+			.canvas create rectangle $xPixel $yPixel $xPixelExtent $yPixelExtent -fill $color
+		}
+	}
+}
+
+proc redraw { } {
+	draw [tclwfc::generate]
+}
