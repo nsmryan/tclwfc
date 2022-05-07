@@ -174,10 +174,12 @@ static int Tclwfc_Gen(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *c
 
 int DLLEXPORT Tclwfc_Init(Tcl_Interp *interp)
 {
+#ifdef USE_TCL_STUBS
     if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL)
 	{
         return TCL_ERROR;
     }
+#endif
 
     if (Tcl_PkgProvide(interp, "tclwfc", "1.0") == TCL_ERROR)
 	{

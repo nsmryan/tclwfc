@@ -1,6 +1,7 @@
 package require Tk
 
-load "./tclwfc.so"
+lappend auto_path build
+package require tclwfc
 
 set fileName wfc/samples/curl.png
 
