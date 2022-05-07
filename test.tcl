@@ -2,11 +2,24 @@ package require Tk
 
 load "./tclwfc.so"
 
-set fileName wfc/samples/cave.png
+set fileName wfc/samples/curl.png
 
 set width 32
 set height 32
-tclwfc::wfc $width $height $fileName 3 3 1 1 1 1
+
+proc wfc { name fileName } {
+    global width height
+
+    if { [info proc $name] != "" } {
+        destroyWfc $name
+    }
+
+    tclwfc::wfc $name $width $height $fileName 3 3 1 1 1 1
+}
+
+proc destroyWfc { name } {
+    rename $name ""
+}
 
 canvas .canvas 
 pack .canvas -expand yes -fill both
@@ -43,5 +56,7 @@ proc draw { pixels } {
 }
 
 proc redraw { } {
-	draw [tclwfc::generate]
+	draw [gen]
 }
+
+wfc gen $fileName

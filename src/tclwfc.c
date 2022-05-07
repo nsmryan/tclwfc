@@ -12,84 +12,103 @@
 #include "wfc.h"
 
 
-static struct wfc *wfc = NULL;
-static struct wfc_image *inputImage = NULL;
+typedef struct Tclwfc_State
+{
+    struct wfc *wfc;
+    struct wfc_image *image;
+} Tclwfc_State;
+
+
+static int Tclwfc_Gen(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+
+static void Tclwfc_StateDelete(ClientData cdata)
+{
+    Tclwfc_State *state = (Tclwfc_State*)cdata;
+    
+     wfc_destroy(state->wfc);
+     wfc_img_destroy(state->image);
+}
 
 static int Tclwfc_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
-    if (objc < 9)
+    if (objc < 10)
     {
-        Tcl_WrongNumArgs(interp, 1, objv, "wfc");
+        Tcl_WrongNumArgs(interp, 1, objv, "wfc cmd width height fileName tileWidth tileHeight expandInput addHoriz addVert add90DegreeRotations");
         return TCL_ERROR;
     }
 
 	int result;
 
+    int objIndex = 1;
+
+	char *cmdName;
+	cmdName = Tcl_GetString(objv[objIndex++]);
+
     int width;
-	result = Tcl_GetIntFromObj(interp, objv[1], &width);
+	result = Tcl_GetIntFromObj(interp, objv[objIndex++], &width);
 	if (result != TCL_OK)
 	{
         return TCL_ERROR;
 	}
 
     int height;
-	result = Tcl_GetIntFromObj(interp, objv[2], &height);
+	result = Tcl_GetIntFromObj(interp, objv[objIndex++], &height);
 	if (result != TCL_OK)
 	{
         return TCL_ERROR;
 	}
 
 	char *fileName;
-	fileName = Tcl_GetString(objv[3]);
+	fileName = Tcl_GetString(objv[objIndex++]);
 
     int tileWidth;
-	result = Tcl_GetIntFromObj(interp, objv[4], &tileWidth);
+	result = Tcl_GetIntFromObj(interp, objv[objIndex++], &tileWidth);
 	if (result != TCL_OK)
 	{
         return TCL_ERROR;
 	}
 
     int tileHeight;
-	result = Tcl_GetIntFromObj(interp, objv[5], &tileHeight);
+	result = Tcl_GetIntFromObj(interp, objv[objIndex++], &tileHeight);
 	if (result != TCL_OK)
 	{
         return TCL_ERROR;
 	}
 
     int expandInput;
-	result = Tcl_GetIntFromObj(interp, objv[6], &expandInput);
+	result = Tcl_GetIntFromObj(interp, objv[objIndex++], &expandInput);
 	if (result != TCL_OK)
 	{
         return TCL_ERROR;
 	}
 
     int addHoriz;
-	result = Tcl_GetIntFromObj(interp, objv[7], &addHoriz);
+	result = Tcl_GetIntFromObj(interp, objv[objIndex++], &addHoriz);
 	if (result != TCL_OK)
 	{
         return TCL_ERROR;
 	}
 
     int addVert;
-	result = Tcl_GetIntFromObj(interp, objv[8], &addVert);
+	result = Tcl_GetIntFromObj(interp, objv[objIndex++], &addVert);
 	if (result != TCL_OK)
 	{
         return TCL_ERROR;
 	}
 
     int add90Rotations;
-	result = Tcl_GetIntFromObj(interp, objv[9], &add90Rotations);
+	result = Tcl_GetIntFromObj(interp, objv[objIndex++], &add90Rotations);
 	if (result != TCL_OK)
 	{
         return TCL_ERROR;
 	}
 
-	inputImage = wfc_img_load(fileName);
+	struct wfc_image *image = wfc_img_load(fileName);
 
-    wfc = wfc_overlapping(
+    struct wfc *wfc = wfc_overlapping(
 		 width,
 		 height,
-		 inputImage,
+		 image,
 		 tileWidth,
 		 tileHeight,
 		 expandInput,
@@ -98,12 +117,25 @@ static int Tclwfc_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *c
 		 add90Rotations
 	 );
 
+    Tclwfc_State *state = malloc(sizeof(Tclwfc_State));
+    if (state == NULL)
+    {
+        return TCL_ERROR;
+    }
+
+    state->wfc = wfc;
+    state->image = image;
+
+    Tcl_CreateObjCommand(interp, cmdName, Tclwfc_Gen, state, Tclwfc_StateDelete);
+
     return TCL_OK;
 }
 
 static int Tclwfc_Gen(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
-	wfc_init(wfc);
+    Tclwfc_State *state = (Tclwfc_State*)cdata;
+
+	wfc_init(state->wfc);
 
 	int maxIters = -1;
 
@@ -117,11 +149,11 @@ static int Tclwfc_Gen(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *c
 		}
 	}
 
-    wfc_run(wfc, maxIters);
+    wfc_run(state->wfc, maxIters);
 
 	Tcl_Obj *pixels = Tcl_NewListObj(0, NULL);
 
-	struct wfc_image *tmpImg = wfc_output_image(wfc);
+	struct wfc_image *tmpImg = wfc_output_image(state->wfc);
 
 	for (int height = 0; height < tmpImg->height; height++)
 	{
@@ -139,11 +171,6 @@ static int Tclwfc_Gen(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *c
 
 	return TCL_OK;
 }
-
-#if 0
-         wfc_destroy(wfc);
-         wfc_img_destroy(output_image);
-#endif
 
 int DLLEXPORT Tclwfc_Init(Tcl_Interp *interp)
 {
