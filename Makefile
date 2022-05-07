@@ -1,8 +1,12 @@
 
 
+CFLAGS += -Istb -Iwfc 
+CFLAGS += -shared -fPIC 
+CFLAGS += -DUSE_TCL_STUBS 
+CFLAGS += -ggdb 
 
 tclwfc.so: src/tclwfc.c
-	$(CC) -shared -ggdb -fPIC -o $@ -DUSE_TCL_STUBS -Istb -Iwfc src/tclwfc.c -ltclstub8.6
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ src/tclwfc.c -ltclstub8.6
 
 .PHONY: test clean dist
 dist: tclwfc.so
