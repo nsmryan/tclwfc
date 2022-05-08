@@ -5,17 +5,34 @@ package require tclwfc
 
 set fileName wfc/samples/curl.png
 
-set width 32
-set height 32
+set width 20
+set height 20
 
-proc wfc { name fileName } {
-    global width height
+proc dictGetDefault { dictionary key value } {
+    if { [dict exists $dictionary $key] } { 
 
+        return [dict get $dictionary $key]
+    }
+    return $value
+}
+
+proc wfc { name args } {
     if { [info proc $name] != "" } {
+
         destroyWfc $name
     }
 
-    tclwfc::wfc $name $width $height $fileName 3 3 1 1 1 1
+    set width [dictGetDefault $args -width 20]
+    set height [dictGetDefault $args -height 20]
+    set fileName [dictGetDefault $args -fileName data/wfc_seed_2.png]
+    set tileWidth [dictGetDefault $args -tileWidth 3]
+    set tileHeight [dictGetDefault $args -tileHeight 3]
+    set expandInput [dictGetDefault $args -expandInput 1]
+    set addHoriz [dictGetDefault $args -addHoriz 1]
+    set addVert [dictGetDefault $args -addVert 1]
+    set add90DegreeRotations [dictGetDefault $args -add90DegreeRotations 1]
+
+    tclwfc::wfc $name $width $height $fileName $tileWidth $tileHeight $expandInput $addHoriz $addVert $add90DegreeRotations 
 }
 
 proc destroyWfc { name } {
@@ -56,8 +73,20 @@ proc draw { pixels } {
 	}
 }
 
-proc redraw { } {
-	draw [gen]
+proc timeit { cmd } {
+    set start [clock microseconds]
+    {*}$cmd
+    set end [clock microseconds]
+    puts "took [expr ($end - $start) / 1000000.0]"
 }
 
-wfc gen $fileName
+proc redraw { { ms 0 } } {
+    draw [gen]
+
+    if { $ms > 0 } {
+        after $ms [list redraw $ms]
+    }
+}
+
+wfc gen $fileName -width $width -height $height
+
